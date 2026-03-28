@@ -1,0 +1,5 @@
+A/A.1/dblp_data/*.csv
+A/A.1/dblp_data/*.gz
+A/A.1/dblp_data/*.xml
+A/A.1/dblp_data/*.dtd
+A/A.1/nodes_and_relations

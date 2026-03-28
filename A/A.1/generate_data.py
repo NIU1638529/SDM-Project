@@ -1,0 +1,327 @@
+#! /usr/bin/env python3
+import csv
+import os
+import random
+
+# --- CONFIGURACIÓN ---
+LIMIT = 5000 
+GLOBAL_AUTHORS = set()
+TITLES_SEEN = set()
+ALL_PAPER_IDS = []
+INPUT_PATH  = r"dblp_data"
+OUTPUT_PATH = r"nodes_and_relations"
+
+# --- POOL DE CIUDADES ---
+CITIES = [
+    "Amsterdam", "Athens", "Austin", "Barcelona", "Beijing", "Berlin", "Boston", "Brussels", 
+    "Budapest", "Chicago", "Copenhagen", "Dublin", "Edinburgh", "Florence", "Geneva",
+    "Helsinki", "Hong Kong", "Istanbul", "Kyoto", "Lisbon", "London", "Los Angeles", 
+    "Madrid", "Melbourne", "Milan", "Montreal", "Moscow", "Munich", "New York", "Oslo",
+    "Paris", "Prague", "Rome", "San Francisco", "Seattle", "Seoul", "Shanghai", "Singapore", 
+    "Stockholm", "Sydney", "Tokyo", "Toronto", "Vancouver", "Vienna", "Warsaw",
+    "Washington D.C.", "Zurich"
+]
+
+# --- MAPA paper_id -> año de publicación (para calcular citas válidas por IF) ---
+PAPER_YEAR = {}      # paper_id -> int(year)
+# --- MAPA paper_id -> journal (para agrupar por journal al generar citas) ---
+PAPER_JOURNAL = {}   # paper_id -> journal_name
+
+def get_headers(header_file):
+    if not os.path.exists(header_file):
+        print(f"⚠️ Error: No se encuentra el archivo de cabecera {header_file}")
+        return []
+    with open(header_file, 'r', encoding='utf-8-sig') as f:
+        line = f.readline().strip()
+        if not line: return []
+        parts = line.split(';')
+        headers = [col.split(':')[0] for col in parts if col]
+        return headers
+
+# --- 1. ARTICLES (Paper -> Volume -> Journal) ---
+def process_articles(data_file, header_file):
+    print(f"Processing articles.csv (Journals)...")
+    headers = get_headers(header_file)
+    journals_seen = set()
+    volumes_seen = set()
+
+    with open(data_file, 'r', encoding='utf-8') as f_in, \
+         open(f'{OUTPUT_PATH}/paper_node.csv', 'w', encoding='utf-8', newline='') as f_p, \
+         open(f'{OUTPUT_PATH}/author_node.csv', 'w', encoding='utf-8', newline='') as f_a, \
+         open(f'{OUTPUT_PATH}/writes_relation.csv', 'w', encoding='utf-8', newline='') as f_w, \
+         open(f'{OUTPUT_PATH}/volume_node.csv', 'w', encoding='utf-8', newline='') as f_v, \
+         open(f'{OUTPUT_PATH}/journal_node.csv', 'w', encoding='utf-8', newline='') as f_j, \
+         open(f'{OUTPUT_PATH}/published_in_relation.csv', 'w', encoding='utf-8', newline='') as f_pub, \
+         open(f'{OUTPUT_PATH}/belongs_to_relation.csv', 'w', encoding='utf-8', newline='') as f_bel:
+        
+        reader = csv.DictReader(f_in, delimiter=';', fieldnames=headers)
+        w_paper  = csv.writer(f_p,   delimiter=';')
+        w_author = csv.writer(f_a,   delimiter=';')
+        w_writes = csv.writer(f_w,   delimiter=';')
+        w_volume = csv.writer(f_v,   delimiter=';')
+        w_journal= csv.writer(f_j,   delimiter=';')
+        w_pub    = csv.writer(f_pub, delimiter=';')
+        w_bel    = csv.writer(f_bel, delimiter=';')
+
+        w_paper.writerow(['paper_id', 'title', 'pages', 'doi', 'abstract', 'year'])
+        w_author.writerow(['name'])
+        w_writes.writerow(['author_id', 'paper_id', 'role'])
+        w_volume.writerow(['volume_id', 'number'])
+        w_journal.writerow(['journal_name'])
+        w_pub.writerow(['paper_id', 'container_id'])
+        w_bel.writerow(['child_id', 'parent_id'])
+
+        count = 0
+        for row in reader:
+            p_id   = row.get('id', '').strip()
+            p_title= row.get('title', '').strip()
+            j_name = row.get('journal', '').strip()
+
+            if not p_id or not p_title or p_title in TITLES_SEEN or not j_name \
+               or j_name.lower() == "unknown journal" or not row.get('author', '').strip():
+                continue
+            if count >= LIMIT: break
+
+            TITLES_SEEN.add(p_title)
+            ALL_PAPER_IDS.append(p_id)
+
+            abstract = f"This journal article explores {p_title} in depth."
+            doi    = row.get('ee', '').split('|')[0] if row.get('ee') else ''
+            p_year = row.get('year', '').strip()
+
+            w_paper.writerow([p_id, p_title, row.get('pages', ''), doi, abstract, p_year])
+
+            # Track year and journal for citation strategy
+            try:
+                PAPER_YEAR[p_id]    = int(p_year)
+                PAPER_JOURNAL[p_id] = j_name
+            except ValueError:
+                pass
+
+            v_num = row.get('volume', 'N/A').strip()
+            v_id  = f"vol_{j_name}_{v_num}".replace(" ", "_")
+
+            if j_name not in journals_seen:
+                w_journal.writerow([j_name]); journals_seen.add(j_name)
+            if v_id not in volumes_seen:
+                w_volume.writerow([v_id, v_num]); volumes_seen.add(v_id)
+                w_bel.writerow([v_id, j_name])
+
+            w_pub.writerow([p_id, v_id])
+
+            authors = [a.strip() for a in row.get('author', '').split('|') if a.strip()]
+            for i, name in enumerate(authors):
+                if name not in GLOBAL_AUTHORS:
+                    w_author.writerow([name]); GLOBAL_AUTHORS.add(name)
+                w_writes.writerow([name, p_id, 'Main Author' if i == 0 else 'Co-author'])
+
+            count += 1
+
+# --- 2. INPROCEEDINGS ---
+def process_inproceedings(data_file, header_file):
+    print(f"Procesando Inproceedings.csv...")
+    headers = get_headers(header_file)
+
+    with open(data_file, 'r', encoding='utf-8') as f_in, \
+         open(f'{OUTPUT_PATH}/paper_node.csv', 'a', encoding='utf-8', newline='') as f_p, \
+         open(f'{OUTPUT_PATH}/author_node.csv', 'a', encoding='utf-8', newline='') as f_a, \
+         open(f'{OUTPUT_PATH}/writes_relation.csv', 'a', encoding='utf-8', newline='') as f_w, \
+         open(f'{OUTPUT_PATH}/published_in_relation.csv', 'a', encoding='utf-8', newline='') as f_pub:
+        
+        reader   = csv.DictReader(f_in, delimiter=';', fieldnames=headers)
+        w_paper  = csv.writer(f_p,   delimiter=';')
+        w_author = csv.writer(f_a,   delimiter=';')
+        w_writes = csv.writer(f_w,   delimiter=';')
+        w_pub    = csv.writer(f_pub, delimiter=';')
+
+        count = 0
+        for row in reader:
+            p_id   = row.get('id', '').strip()
+            p_title= row.get('title', '').strip()
+
+            if not p_id or not p_title or p_title in TITLES_SEEN or not row.get('author', '').strip():
+                continue
+            if count >= LIMIT: break
+
+            TITLES_SEEN.add(p_title)
+            ALL_PAPER_IDS.append(p_id)
+
+            abstract = f"Conference paper discussing: {p_title}."
+            doi    = row.get('ee', '').split('|')[0] if row.get('ee') else ''
+            p_year = row.get('year', '').strip()
+
+            w_paper.writerow([p_id, p_title, row.get('pages', ''), doi, abstract, p_year])
+
+            try:
+                PAPER_YEAR[p_id] = int(p_year)
+            except ValueError:
+                pass
+
+            edit_id = row.get('crossref', '').strip()
+            if edit_id:
+                w_pub.writerow([p_id, edit_id])
+
+            authors = [a.strip() for a in row.get('author', '').split('|') if a.strip()]
+            for i, name in enumerate(authors):
+                if name not in GLOBAL_AUTHORS:
+                    w_author.writerow([name]); GLOBAL_AUTHORS.add(name)
+                w_writes.writerow([name, p_id, 'Main Author' if i == 0 else 'Co-author'])
+
+            count += 1
+
+# --- 3. PROCEEDINGS ---
+def process_proceedings(data_file, header_file):
+    print(f"Procesando Proceedings.csv...")
+    headers = get_headers(header_file)
+    confs_seen = set()
+
+    with open(data_file, 'r', encoding='utf-8') as f_in, \
+         open(f'{OUTPUT_PATH}/conference_node.csv', 'w', encoding='utf-8', newline='') as f_c, \
+         open(f'{OUTPUT_PATH}/edition_node.csv', 'w', encoding='utf-8', newline='') as f_e, \
+         open(f'{OUTPUT_PATH}/belongs_to_relation.csv', 'a', encoding='utf-8', newline='') as f_bel:
+        
+        reader = csv.DictReader(f_in, delimiter=';', fieldnames=headers)
+        w_conf = csv.writer(f_c,   delimiter=';')
+        w_edit = csv.writer(f_e,   delimiter=';')
+        w_bel  = csv.writer(f_bel, delimiter=';')
+
+        w_conf.writerow(['conf_name', 'type'])
+        w_edit.writerow(['edition_id', 'title', 'edition_number', 'city'])
+
+        count = 0
+        for row in reader:
+            conf_name = row.get('booktitle', '').strip()
+            edit_id   = row.get('key', '').strip()
+
+            if not conf_name or not edit_id or conf_name.lower() == "unknown":
+                continue
+            if count >= LIMIT: break
+
+            if conf_name not in confs_seen:
+                conf_type = 'Conference' if random.random() < 0.7 else 'Workshop'
+                w_conf.writerow([conf_name, conf_type])
+                confs_seen.add(conf_name)
+
+            w_edit.writerow([edit_id, row.get('title', ''), row.get('volume', 'N/A'), random.choice(CITIES)])
+            w_bel.writerow([edit_id, conf_name])
+
+            count += 1
+
+# --- 4. EXTRA DATA ---
+def generate_extra_data():
+    print(f"🚀 Generating Reviewers and Strategic Citations for Impact Factor...")
+    authors_list = sorted(list(GLOBAL_AUTHORS))
+
+    # Build paper_authors map from writes_relation.csv
+    paper_authors = {}
+    if os.path.exists(f'{OUTPUT_PATH}/writes_relation.csv'):
+        with open(f'{OUTPUT_PATH}/writes_relation.csv', 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter=';')
+            for row in reader:
+                p_id = row['paper_id']
+                if p_id not in paper_authors:
+                    paper_authors[p_id] = set()
+                paper_authors[p_id].add(row['author_id'])
+
+    # --- REVIEWERS ---
+    with open(f'{OUTPUT_PATH}/reviews_relation.csv', 'w', encoding='utf-8', newline='') as f_rev:
+        w_rev = csv.writer(f_rev, delimiter=';')
+        w_rev.writerow(['author_name', 'paper_id'])
+
+        for p_id in ALL_PAPER_IDS:
+            current_authors = paper_authors.get(p_id, set())
+            possible_reviewers = [a for a in authors_list if a not in current_authors]
+            if len(possible_reviewers) >= 3:
+                for r in random.sample(possible_reviewers, 3):
+                    w_rev.writerow([r, p_id])
+
+    # --- STRATEGIC CITATIONS FOR IMPACT FACTOR ---
+    #
+    # Strategy: assign each journal a tier that determines how many
+    # within-window (year+1, year+2) citations its papers receive.
+    #
+    #   Tier A (top,    ~15% of journals) → 15–40 citations per paper
+    #   Tier B (mid,    ~35% of journals) →  5–14 citations per paper
+    #   Tier C (low,    ~50% of journals) →  0–4  citations per paper
+    #
+    # Citations from conference papers are purely random (no IF calculation).
+    # The citation year is drawn uniformly from [pub_year+1, pub_year+2]
+    # so every citation falls inside the classic 2-year IF window.
+
+    # Collect unique journals and assign tiers
+    unique_journals = list(set(PAPER_JOURNAL.values()))
+    random.shuffle(unique_journals)
+    n = len(unique_journals)
+    cutA = max(1, int(n * 0.15))
+    cutB = max(cutA + 1, int(n * 0.50))
+
+    journal_tier = {}
+    for i, j in enumerate(unique_journals):
+        if i < cutA:
+            journal_tier[j] = 'A'
+        elif i < cutB:
+            journal_tier[j] = 'B'
+        else:
+            journal_tier[j] = 'C'
+
+    print(f"  📊 Journal tiers — A: {cutA}, B: {cutB - cutA}, C: {n - cutB}")
+
+    # Papers that have a valid year and belong to a journal (for citing others)
+    citable_papers = [p for p in ALL_PAPER_IDS if p in PAPER_YEAR]
+
+    with open(f'{OUTPUT_PATH}/cites_relation.csv', 'w', encoding='utf-8', newline='') as f_cite:
+        w_cite = csv.writer(f_cite, delimiter=';')
+        # citation_year = year in which the citing paper references the target
+        w_cite.writerow(['paper_id_source', 'paper_id_target', 'citation_year'])
+
+        for p_id in ALL_PAPER_IDS:
+            pub_year = PAPER_YEAR.get(p_id)
+            j_name   = PAPER_JOURNAL.get(p_id)
+
+            if pub_year and j_name:
+                # Journal paper: number of citations depends on tier
+                tier = journal_tier.get(j_name, 'C')
+                if tier == 'A':
+                    num_cites = random.randint(15, 40)
+                elif tier == 'B':
+                    num_cites = random.randint(5, 14)
+                else:
+                    num_cites = random.randint(0, 4)
+            else:
+                # Conference paper: small random citations, no IF strategy needed
+                num_cites = random.randint(0, 5)
+
+            if num_cites == 0 or len(citable_papers) <= 1:
+                continue
+
+            # Choose papers that cite this one (source papers)
+            sources = random.sample(
+                [p for p in citable_papers if p != p_id],
+                min(num_cites, len(citable_papers) - 1)
+            )
+
+            for src in sources:
+                if pub_year:
+                    # Citation year within the 2-year IF window
+                    cite_year = random.randint(pub_year + 1, pub_year + 2)
+                else:
+                    cite_year = ''
+                w_cite.writerow([src, p_id, cite_year])
+
+if __name__ == "__main__":
+    os.makedirs(OUTPUT_PATH, exist_ok=True)
+    random.seed(42)
+    process_articles(
+        os.path.join(INPUT_PATH, 'output_article.csv'),
+        os.path.join(INPUT_PATH, 'output_article_header.csv')
+    )
+    process_inproceedings(
+        os.path.join(INPUT_PATH, 'output_inproceedings.csv'),
+        os.path.join(INPUT_PATH, 'output_inproceedings_header.csv')
+    )
+    process_proceedings(
+        os.path.join(INPUT_PATH, 'output_proceedings.csv'),
+        os.path.join(INPUT_PATH, 'output_proceedings_header.csv')
+    )
+    generate_extra_data()
+    print(f"\n✅ Proceso completado. Resultados 100% consistentes.")
