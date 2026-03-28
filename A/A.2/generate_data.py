@@ -27,6 +27,9 @@ PAPER_YEAR = {}      # paper_id -> int(year)
 # --- MAPA paper_id -> journal (para agrupar por journal al generar citas) ---
 PAPER_JOURNAL = {}   # paper_id -> journal_name
 
+# --- Contador de citas recibidas por cada paper ---
+CITATION_COUNT = {}  # paper_id -> int
+
 # --- TOPIC DETECTION: keyword -> topic mapping ---
 # Keywords are matched case-insensitively against paper titles.
 # A paper is only included in topic CSVs if at least one keyword matches.
@@ -444,6 +447,35 @@ def generate_extra_data():
                 else:
                     cite_year = ''
                 w_cite.writerow([src, p_id, cite_year])
+                # Accumulate citation count for the target paper
+                CITATION_COUNT[p_id] = CITATION_COUNT.get(p_id, 0) + 1
+
+def update_paper_citation_count():
+    """
+    Re-writes paper_node.csv adding citation_count column,
+    and writes paper_citation_count.csv as a standalone update file.
+    """
+    print(f"📊 Updating paper_node.csv with citation_count...")
+
+    # Read existing paper_node.csv
+    paper_rows = []
+    with open(f'{OUTPUT_PATH}/paper_node.csv', 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f, delimiter=';')
+        for row in reader:
+            paper_rows.append(row)
+
+    # Rewrite with citation_count column
+    with open(f'{OUTPUT_PATH}/paper_node.csv', 'w', encoding='utf-8', newline='') as f:
+        w = csv.writer(f, delimiter=';')
+        w.writerow(['paper_id', 'title', 'pages', 'doi', 'abstract', 'year', 'citation_count'])
+        for row in paper_rows:
+            w.writerow([
+                row['paper_id'], row['title'], row['pages'],
+                row['doi'], row['abstract'], row['year'],
+                CITATION_COUNT.get(row['paper_id'], 0)
+            ])
+
+    print(f"  ✅ citation_count added to {len(paper_rows)} papers")
 
 def generate_topic_data():
     """
@@ -492,5 +524,6 @@ if __name__ == "__main__":
         os.path.join(INPUT_PATH, 'output_proceedings_header.csv')
     )
     generate_extra_data()
+    update_paper_citation_count()
     generate_topic_data()
     print(f"\n✅ Proceso completado. Resultados 100% consistentes.")
