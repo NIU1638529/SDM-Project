@@ -27,6 +27,131 @@ PAPER_YEAR = {}      # paper_id -> int(year)
 # --- MAPA paper_id -> journal (para agrupar por journal al generar citas) ---
 PAPER_JOURNAL = {}   # paper_id -> journal_name
 
+# --- TOPIC DETECTION: keyword -> topic mapping ---
+# Keywords are matched case-insensitively against paper titles.
+# A paper is only included in topic CSVs if at least one keyword matches.
+TOPIC_KEYWORDS = {
+    "Artificial Intelligence": [
+        "artificial intelligence", "AI", "intelligent system", "knowledge representation",
+        "expert system", "cognitive", "reasoning", "autonomous agent", "machine mentality",
+        "singularity", "oracle AI", "brain emulation", "embodiment", "intentionality",
+        "turing", "computation and cognition", "philosophy of AI", "AI safety"
+    ],
+    "Machine Learning": [
+        "machine learning", "deep learning", "neural network", "convolutional", "recurrent",
+        "transformer", "attention mechanism", "generative model", "GAN", "autoencoder",
+        "reinforcement learning", "supervised", "unsupervised", "classification", "regression",
+        "random forest", "gradient boosting", "XGBoost", "embedding", "fine-tuning",
+        "transfer learning", "federated learning", "spiking neural", "hyperdimensional"
+    ],
+    "Computer Vision": [
+        "computer vision", "image recognition", "object detection", "image segmentation",
+        "visual", "convolutional neural", "optical flow", "image processing", "face recognition",
+        "depth estimation", "3D reconstruction", "scene understanding", "tracking",
+        "bounding box", "YOLO", "ResNet", "vision transformer", "hotspot detection",
+        "foreground", "fracture surface", "mouth shape", "blink detection"
+    ],
+    "Natural Language Processing": [
+        "natural language", "NLP", "text mining", "sentiment analysis", "named entity",
+        "language model", "word embedding", "BERT", "GPT", "question answering",
+        "machine translation", "summarization", "information extraction", "parsing",
+        "speech recognition", "dialogue", "chatbot", "large language model", "LLM",
+        "assertion failure", "RTL design"
+    ],
+    "Data Mining": [
+        "data mining", "pattern recognition", "association rule", "clustering", "anomaly detection",
+        "outlier", "frequent itemset", "sequential pattern", "bayesian", "decision tree",
+        "feature selection", "dimensionality reduction", "knowledge discovery", "OLAP",
+        "folksonomy", "ontology", "semantic enrichment", "interestingness measure",
+        "proximity measure", "topological", "cognitive map", "user centered"
+    ],
+    "Databases": [
+        "database", "SQL", "query", "relational", "NoSQL", "graph database", "indexing",
+        "transaction", "data warehouse", "OLAP", "schema", "data integration", "data model",
+        "query optimization", "log", "persistent memory", "DRAM", "SRAM", "NVRAM",
+        "scratchpad", "cache", "memory controller", "storage", "flash"
+    ],
+    "Computer Architecture": [
+        "processor", "microprocessor", "VLSI", "FPGA", "circuit", "chip", "hardware",
+        "synthesis", "placement", "routing", "timing", "clock", "power dissipation",
+        "logic design", "gate", "flip-flop", "register", "pipeline", "cache",
+        "memory hierarchy", "NoC", "network-on-chip", "SoC", "ASIC", "EDA",
+        "layout", "floorplan", "design automation", "DAC", "verification", "simulation",
+        "fault", "test generation", "testability", "scan", "ATPG", "fault-tolerant",
+        "parasitic", "extraction", "interconnect", "wire", "buffer", "clock tree"
+    ],
+    "Distributed Systems": [
+        "distributed", "cloud computing", "parallel", "concurrency", "fault tolerance",
+        "consensus", "replication", "MapReduce", "Hadoop", "Spark", "microservice",
+        "container", "kubernetes", "serverless", "load balancing", "message passing",
+        "multiprocessor", "multi-core", "GPU", "GPGPU", "accelerator", "HLS",
+        "high-level synthesis", "CGRA", "dataflow", "streaming"
+    ],
+    "Networks and Communications": [
+        "network", "protocol", "routing", "wireless", "IoT", "internet of things",
+        "bandwidth", "latency", "packet", "TCP", "UDP", "5G", "antenna", "signal",
+        "communication", "vehicular", "edge computing", "fog computing", "intrusion detection",
+        "network intrusion", "interconnect", "NoC", "network-on-chip"
+    ],
+    "Security and Privacy": [
+        "security", "privacy", "encryption", "cryptography", "authentication", "firewall",
+        "malware", "vulnerability", "attack", "defense", "cyber", "hardware trojan",
+        "watermark", "unclonable", "PUF", "side channel", "fault injection",
+        "IP protection", "intellectual property", "obfuscation", "safety engineering"
+    ],
+    "Software Engineering": [
+        "software engineering", "software development", "agile", "testing", "debugging",
+        "code review", "refactoring", "static analysis", "dynamic analysis", "bug",
+        "fault-prone", "test case", "verification", "formal methods", "model checking",
+        "specification", "UML", "design pattern", "mobile application", "API",
+        "compiler", "programming language", "code generation", "VHDL", "SystemC",
+        "instruction set", "simulator", "virtual prototype", "post-silicon"
+    ],
+    "Robotics": [
+        "robot", "robotic", "autonomous vehicle", "drone", "UAV", "motion planning",
+        "kinematics", "sensor fusion", "SLAM", "navigation", "manipulation",
+        "human-robot", "control system", "actuator", "embedded system", "real-time",
+        "neuromorphic", "cognitive unit", "sensorimotor"
+    ],
+    "Bioinformatics": [
+        "bioinformatics", "genomics", "proteomics", "DNA", "gene", "protein",
+        "sequence alignment", "phylogenetic", "molecular", "biological network",
+        "drug discovery", "medical", "health", "clinical", "diagnosis",
+        "neural processing", "brain", "neuroscience", "cognitive science"
+    ],
+    "Quantum Computing": [
+        "quantum", "qubit", "quantum circuit", "quantum gate", "superposition",
+        "entanglement", "quantum error", "quantum algorithm", "quantum linguistics",
+        "quantum cryptography", "cryo-CMOS", "quantum computing"
+    ],
+    "High Performance Computing": [
+        "high performance", "HPC", "supercomputer", "GPU acceleration", "CUDA",
+        "OpenMP", "MPI", "performance optimization", "throughput", "latency",
+        "benchmark", "profiling", "power efficiency", "energy efficiency",
+        "scalable", "parallel computing", "matrix multiplication", "GEMM",
+        "sparse matrix", "graph processing", "breadth-first search"
+    ],
+}
+
+# Build a flat list of (keyword_lower, topic) for fast lookup
+_KEYWORD_TOPIC_LIST = []
+for _topic, _kws in TOPIC_KEYWORDS.items():
+    for _kw in _kws:
+        _KEYWORD_TOPIC_LIST.append((_kw.lower(), _topic))
+
+def detect_topics(title: str) -> list[str]:
+    """Return list of unique topics detected in title (can be multiple)."""
+    title_lower = title.lower()
+    found = set()
+    for kw, topic in _KEYWORD_TOPIC_LIST:
+        if kw in title_lower:
+            found.add(topic)
+    return sorted(found)
+
+# paper_id -> list of detected topics (only papers with at least one topic)
+PAPER_TOPICS = {}   # paper_id -> [topic1, topic2, ...]
+
+
 def get_headers(header_file):
     if not os.path.exists(header_file):
         print(f"⚠️ Error: No se encuentra el archivo de cabecera {header_file}")
@@ -82,8 +207,14 @@ def process_articles(data_file, header_file):
                 continue
             if count >= LIMIT: break
 
+            # Detect topics first — skip paper if no topic found
+            topics = detect_topics(p_title)
+            if not topics:
+                continue
+
             TITLES_SEEN.add(p_title)
             ALL_PAPER_IDS.append(p_id)
+            PAPER_TOPICS[p_id] = topics
 
             abstract = f"This journal article explores {p_title} in depth."
             doi    = row.get('ee', '').split('|')[0] if row.get('ee') else ''
@@ -143,8 +274,14 @@ def process_inproceedings(data_file, header_file):
                 continue
             if count >= LIMIT: break
 
+            # Detect topics first — skip paper if no topic found
+            topics = detect_topics(p_title)
+            if not topics:
+                continue
+
             TITLES_SEEN.add(p_title)
             ALL_PAPER_IDS.append(p_id)
+            PAPER_TOPICS[p_id] = topics
 
             abstract = f"Conference paper discussing: {p_title}."
             doi    = row.get('ee', '').split('|')[0] if row.get('ee') else ''
@@ -308,6 +445,37 @@ def generate_extra_data():
                     cite_year = ''
                 w_cite.writerow([src, p_id, cite_year])
 
+def generate_topic_data():
+    """
+    Write topic_node.csv and focused_on_relation.csv.
+    Only papers with at least one detected topic are included.
+    """
+    print(f"🏷️  Generating topic nodes and FOCUSED_ON relations...")
+
+    # Collect unique topics
+    all_topics = set()
+    for topics in PAPER_TOPICS.values():
+        all_topics.update(topics)
+
+    with open(f'{OUTPUT_PATH}/topic_node.csv', 'w', encoding='utf-8', newline='') as f_t,          open(f'{OUTPUT_PATH}/focused_on_relation.csv', 'w', encoding='utf-8', newline='') as f_fo:
+
+        w_t  = csv.writer(f_t,  delimiter=';')
+        w_fo = csv.writer(f_fo, delimiter=';')
+
+        w_t.writerow(['topic_name'])
+        w_fo.writerow(['paper_id', 'topic_name'])
+
+        for topic in sorted(all_topics):
+            w_t.writerow([topic])
+
+        for p_id, topics in PAPER_TOPICS.items():
+            for topic in topics:
+                w_fo.writerow([p_id, topic])
+
+    papers_with_topics = len(PAPER_TOPICS)
+    total_relations    = sum(len(t) for t in PAPER_TOPICS.values())
+    print(f"  ✅ {len(all_topics)} topics, {papers_with_topics} papers matched, {total_relations} FOCUSED_ON relations")
+
 if __name__ == "__main__":
     os.makedirs(OUTPUT_PATH, exist_ok=True)
     random.seed(42)
@@ -324,4 +492,5 @@ if __name__ == "__main__":
         os.path.join(INPUT_PATH, 'output_proceedings_header.csv')
     )
     generate_extra_data()
+    generate_topic_data()
     print(f"\n✅ Proceso completado. Resultados 100% consistentes.")
