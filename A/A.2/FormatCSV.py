@@ -34,6 +34,38 @@ CITATION_COUNT = {}  # paper_id -> int
 # Keywords are matched case-insensitively against paper titles.
 # A paper is only included in topic CSVs if at least one keyword matches.
 TOPIC_KEYWORDS = {
+    # We create the 7 topics of the recommender C and also other topics to make it realistic
+    "data management": [
+        "data management", "database management", "data administration", 
+        "data curation", "transaction", "relational", "NoSQL", "data integration",
+        "data governance", "master data", "metadata"
+    ],
+    "indexing": [
+        "indexing", "index structures", "b-tree", "hash index", "inverted index", 
+        "bitmap index", "search structures", "query optimization", "multidimensional index"
+    ],
+    "data modeling": [
+        "data modeling", "data model", "entity-relationship", "ER model", "schema", 
+        "ontology", "conceptual modeling", "knowledge representation", "unified modeling language"
+    ],
+    "big data": [
+        "big data", "large-scale data", "massive datasets", "hadoop", "spark", 
+        "mapreduce", "data warehouse", "OLAP", "cloud computing", "data lake"
+    ],
+    "data processing": [
+        "data processing", "query processing", "transaction processing", 
+        "stream processing", "log", "parallel computing", "throughput", "batch processing"
+    ],
+    "data storage": [
+        "data storage", "storage", "persistent memory", "NVRAM", "flash", 
+        "distributed storage", "file systems", "memory hierarchy", "solid state drive"
+    ],
+    "data querying": [
+        "data querying", "query", "SQL", "SPARQL", "graph database", "query language", 
+        "complex queries", "query optimization", "XQuery", "cypher"
+    ],
+
+    # We add other categories
     "Artificial Intelligence": [
         "artificial intelligence", "AI", "intelligent system", "knowledge representation",
         "expert system", "cognitive", "reasoning", "autonomous agent", "machine mentality",
@@ -67,12 +99,6 @@ TOPIC_KEYWORDS = {
         "feature selection", "dimensionality reduction", "knowledge discovery", "OLAP",
         "folksonomy", "ontology", "semantic enrichment", "interestingness measure",
         "proximity measure", "topological", "cognitive map", "user centered"
-    ],
-    "Databases": [
-        "database", "SQL", "query", "relational", "NoSQL", "graph database", "indexing",
-        "transaction", "data warehouse", "OLAP", "schema", "data integration", "data model",
-        "query optimization", "log", "persistent memory", "DRAM", "SRAM", "NVRAM",
-        "scratchpad", "cache", "memory controller", "storage", "flash"
     ],
     "Computer Architecture": [
         "processor", "microprocessor", "VLSI", "FPGA", "circuit", "chip", "hardware",
@@ -168,7 +194,7 @@ def get_headers(header_file):
 
 # --- 1. ARTICLES (Paper -> Volume -> Journal) ---
 def process_articles(data_file, header_file):
-    print(f"Processing articles.csv (Journals)...")
+    print(f"Processing articles.csv.")
     headers = get_headers(header_file)
     journals_seen = set()
     volumes_seen = set()
@@ -253,7 +279,7 @@ def process_articles(data_file, header_file):
 
 # --- 2. INPROCEEDINGS ---
 def process_inproceedings(data_file, header_file):
-    print(f"Procesando Inproceedings.csv...")
+    print(f"Processing Inproceedings.csv.")
     headers = get_headers(header_file)
 
     with open(data_file, 'r', encoding='utf-8') as f_in, \
@@ -311,7 +337,7 @@ def process_inproceedings(data_file, header_file):
 
 # --- 3. PROCEEDINGS ---
 def process_proceedings(data_file, header_file):
-    print(f"Procesando Proceedings.csv...")
+    print(f"Processing Proceedings.csv.")
     headers = get_headers(header_file)
     confs_seen = set()
 
@@ -349,7 +375,7 @@ def process_proceedings(data_file, header_file):
 
 # --- 4. EXTRA DATA ---
 def generate_extra_data():
-    print(f"🚀 Generating Reviewers and Strategic Citations for Impact Factor...")
+    print(f"Generating Reviewers and Strategic Citations for Impact Factor.")
     authors_list = sorted(list(GLOBAL_AUTHORS))
 
     # Build paper_authors map from writes_relation.csv
@@ -404,7 +430,7 @@ def generate_extra_data():
         else:
             journal_tier[j] = 'C'
 
-    print(f"  📊 Journal tiers — A: {cutA}, B: {cutB - cutA}, C: {n - cutB}")
+    print(f"Journal tiers — A: {cutA}, B: {cutB - cutA}, C: {n - cutB}")
 
     # Papers that have a valid year and belong to a journal (for citing others)
     citable_papers = [p for p in ALL_PAPER_IDS if p in PAPER_YEAR]
@@ -455,7 +481,7 @@ def update_paper_citation_count():
     Re-writes paper_node.csv adding citation_count column,
     and writes paper_citation_count.csv as a standalone update file.
     """
-    print(f"📊 Updating paper_node.csv with citation_count...")
+    print(f"Updating paper_node.csv with citation_count...")
 
     # Read existing paper_node.csv
     paper_rows = []
@@ -475,14 +501,14 @@ def update_paper_citation_count():
                 CITATION_COUNT.get(row['paper_id'], 0)
             ])
 
-    print(f"  ✅ citation_count added to {len(paper_rows)} papers")
+    print(f" Citation_count added to {len(paper_rows)} papers")
 
 def generate_topic_data():
     """
     Write topic_node.csv and focused_on_relation.csv.
     Only papers with at least one detected topic are included.
     """
-    print(f"🏷️  Generating topic nodes and FOCUSED_ON relations...")
+    print(f"Generating Keyword nodes and FOCUSED_ON relations.")
 
     # Collect unique topics
     all_topics = set()
@@ -506,7 +532,7 @@ def generate_topic_data():
 
     papers_with_topics = len(PAPER_TOPICS)
     total_relations    = sum(len(t) for t in PAPER_TOPICS.values())
-    print(f"  ✅ {len(all_topics)} topics, {papers_with_topics} papers matched, {total_relations} FOCUSED_ON relations")
+    print(f"  {len(all_topics)} topics, {papers_with_topics} papers matched, {total_relations} FOCUSED_ON relations")
 
 if __name__ == "__main__":
     os.makedirs(OUTPUT_PATH, exist_ok=True)
@@ -526,4 +552,4 @@ if __name__ == "__main__":
     generate_extra_data()
     update_paper_citation_count()
     generate_topic_data()
-    print(f"\n✅ Proceso completado. Resultados 100% consistentes.")
+    print(f"\n Process completed. Results completely consistent.")
