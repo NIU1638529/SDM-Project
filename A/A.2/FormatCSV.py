@@ -397,9 +397,8 @@ def generate_extra_data():
         for p_id in ALL_PAPER_IDS:
             current_authors = paper_authors.get(p_id, set())
             possible_reviewers = [a for a in authors_list if a not in current_authors]
-            if len(possible_reviewers) >= 3:
-                for r in random.sample(possible_reviewers, 3):
-                    w_rev.writerow([r, p_id])
+            for r in random.sample(possible_reviewers, min(3, len(possible_reviewers))):
+                w_rev.writerow([r, p_id])
 
     # --- STRATEGIC CITATIONS FOR IMPACT FACTOR ---
     #

@@ -58,12 +58,14 @@ def run_updates(uri, user, password):
             MERGE (a)-[:AFFILIATED_WITH]->(i)
         """, get_csv_data("affiliated_with_relation.csv"))
 
-        # --- 3. is_approved on REVIEWS edges ---
-        print("\nSetting is_approved on REVIEWS edges...")
-        run_batch_query(session, "is_approved on REVIEWS", """
+        # --- 3. REVIEWS edges with is_approved ---
+        # MERGE creates the relationship if it doesn't exist yet (extra reviewers from A.3)
+        # and matches the existing one if it does (base reviewers from A.2).
+        print("\nLoading REVIEWS edges with is_approved...")
+        run_batch_query(session, "REVIEWS with is_approved", """
             MATCH (a:Author {name: row.author_name})
             MATCH (p:Paper {id: row.paper_id})
-            MATCH (a)-[r:REVIEWS]->(p)
+            MERGE (a)-[r:REVIEWS]->(p)
             SET r.is_approved = row.is_approved
         """, get_csv_data("reviews_approved_relation.csv"))
 
@@ -94,12 +96,25 @@ def run_updates(uri, user, password):
 
     driver.close()
     print("\nUpdate completed.")
-    print("\nTo re-run these checks manually in Neo4j Browser:")
+    print("\nTo explore the updated graph, run these queries in Neo4j Desktop:")
+    print("")
+    print("  // Authors per institution type")
     print("  MATCH (a:Author)-[:AFFILIATED_WITH]->(i:Type_of_institution)")
     print("  RETURN i.name AS institution, count(a) AS total ORDER BY institution")
     print("")
+    print("  // REVIEWS approval breakdown")
     print("  MATCH ()-[r:REVIEWS]->()")
     print("  RETURN r.is_approved AS approved, count(r) AS total ORDER BY approved")
+    print("")
+    print("  // Papers with the most reviewers (should show 5 for selected workshops/journals)")
+    print("  MATCH ()-[r:REVIEWS]->(p:Paper)")
+    print("  RETURN p.title AS paper, count(r) AS num_reviewers")
+    print("  ORDER BY num_reviewers DESC LIMIT 10")
+    print("")
+    print("  // Reviewers of a specific paper (replace the title)")
+    print("  MATCH (a:Author)-[r:REVIEWS]->(p:Paper)")
+    print("  WHERE p.title = '<paper title here>'")
+    print("  RETURN a.name AS reviewer, r.is_approved AS approved")
 
 
 if __name__ == "__main__":
