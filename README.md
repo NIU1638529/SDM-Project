@@ -16,6 +16,7 @@ If your Neo4j instance uses a different URI, username, or password, update the c
 - `A/A.2/UploadCSV.py`
 - `A/A.3/UploadUpdateCSV.py`
 - `B/B1.py`, `B/B2.py`, `B/B3.py`, `B/B4.py`
+- `D/PageRank.py`, `D/Louvain.py`
 
 ```python
 NEO4J_URI      = "neo4j://127.0.0.1:7687"  # change to your URI
@@ -136,3 +137,29 @@ To print directly to the terminal instead, run without redirection:
 ```bash
 python B/B1.py
 ```
+
+---
+
+## D — Graph Algorithms
+
+Two graph algorithms run against the live Neo4j database using the **Neo4j Graph Data Science (GDS)** plugin. **A.2 and A.3 must have been completed first.**
+
+> The GDS plugin must be installed in your Neo4j instance. Download it from [https://neo4j.com/docs/graph-data-science/current/installation/](https://neo4j.com/docs/graph-data-science/current/installation/).
+
+| Script | Algorithm | Description |
+|--------|-----------|-------------|
+| `D/PageRank.py` | PageRank | Ranks papers by influence in the citation network. Writes `Paper.pagerank`. |
+| `D/Louvain.py` | Louvain | Detects communities of authors based on co-authorship. Writes `Author.community`. |
+
+It is recommended to redirect the output to a file for easier inspection:
+
+```bash
+python D/PageRank.py > D/PageRank.out
+python D/Louvain.py > D/Louvain.out
+```
+
+Both scripts write results back to the graph as node properties (`Paper.pagerank` and `Author.community`), so the computed values are available for subsequent Cypher queries without re-running the algorithms.
+
+For further details on each algorithm, its parameters, and how to interpret the results, see:
+- `D/PageRank.md`
+- `D/Louvain.md`

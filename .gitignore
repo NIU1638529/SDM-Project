@@ -6,3 +6,6 @@ A/A.2/nodes_and_relations/*.csv
 A/A.3/update_data/*.csv
 B/*.out
 CLAUDE.md
+D/*.md
+D/*.pdf
+D/*.out
