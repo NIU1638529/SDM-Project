@@ -437,8 +437,7 @@ def generate_extra_data():
 
     with open(f'{OUTPUT_PATH}/cites_relation.csv', 'w', encoding='utf-8', newline='') as f_cite:
         w_cite = csv.writer(f_cite, delimiter=';')
-        # citation_year = year in which the citing paper references the target
-        w_cite.writerow(['paper_id_source', 'paper_id_target', 'citation_year'])
+        w_cite.writerow(['paper_id_source', 'paper_id_target'])
 
         for p_id in ALL_PAPER_IDS:
             pub_year = PAPER_YEAR.get(p_id)
@@ -467,12 +466,7 @@ def generate_extra_data():
             )
 
             for src in sources:
-                if pub_year:
-                    # Citation year within the 2-year IF window
-                    cite_year = random.randint(pub_year + 1, pub_year + 2)
-                else:
-                    cite_year = ''
-                w_cite.writerow([src, p_id, cite_year])
+                w_cite.writerow([src, p_id])
                 # Accumulate citation count for the target paper
                 CITATION_COUNT[p_id] = CITATION_COUNT.get(p_id, 0) + 1
 

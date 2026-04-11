@@ -134,8 +134,7 @@ def run_neo4j_import(uri, user, password):
         run_batch_query(session, "CITES (Paper -> Paper)", """
             MATCH (ps:Paper {id: row.paper_id_source})
             MATCH (pt:Paper {id: row.paper_id_target})
-            MERGE (ps)-[r:CITES]->(pt)
-            SET r.citation_year = toInteger(row.citation_year)
+            MERGE (ps)-[:CITES]->(pt)
         """, get_csv_data('cites_relation.csv'), r_batch)
 
         run_batch_query(session, "FOCUSED_ON (Paper -> Keyword)", """

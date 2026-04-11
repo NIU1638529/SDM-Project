@@ -2,4 +2,7 @@ A/A.2/dblp_data/*.csv
 A/A.2/dblp_data/*.gz
 A/A.2/dblp_data/*.xml
 A/A.2/dblp_data/*.dtd
-A/A.2/nodes_and_relations
+A/A.2/nodes_and_relations/*.csv
+A/A.3/update_data/*.csv
+B/*.out
+CLAUDE.md
