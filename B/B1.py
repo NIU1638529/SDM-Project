@@ -7,10 +7,23 @@ counting CITES relationships at query time with COUNT { ()-[:CITES]->(p) }.
 """
 from neo4j import GraphDatabase
 import pandas as pd
+import os
+import sys
+main = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-NEO4J_URI      = "neo4j://127.0.0.1:7687"
-NEO4J_USER     = "neo4j"
-NEO4J_PASSWORD = "sdmproject"
+if main not in sys.path:
+    sys.path.append(main)
+
+import Configuration
+
+# 3. Asignas las variables (fíjate que ahora usamos Configuration con C mayúscula)
+NEO4J_URI      = Configuration.NEO4J_URI
+NEO4J_USER     = Configuration.NEO4J_USER
+NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
+
+#NEO4J_URI      = "neo4j://127.0.0.1:7687"
+#NEO4J_USER     = "neo4j"
+#NEO4J_PASSWORD = "sdmproject"
 
 QUERY = """
 MATCH (c:Conference)<-[:BELONGS_TO]-(e:Edition)<-[:PUBLISHED_IN]-(p:Paper)

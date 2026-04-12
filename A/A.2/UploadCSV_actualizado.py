@@ -1,12 +1,28 @@
 #!/usr/bin/env python3
 import csv
+import sys
+import os
 from pathlib import Path
 from neo4j import GraphDatabase
 
+"""
+Creates the nodes and realtions of the graph as explained in the document
+We create the nodes using Batch size of 5000 and relations with batch size of 1000
+"""
 # NEO4J configuration ()
-NEO4J_URI = "neo4j://127.0.0.1:7687"
-NEO4J_USER = "neo4j"
-NEO4J_PASSWORD = "sdmproject"
+
+main = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(main)
+
+import Configuration
+
+#NEO4J_URI = "neo4j://127.0.0.1:7687"
+#NEO4J_USER = "neo4j"
+#NEO4J_PASSWORD = "sdmproject"
+NEO4J_URI      = Configuration.NEO4J_URI
+NEO4J_USER     = Configuration.NEO4J_USER
+NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
+
 
 # Directory where your CSV files are located
 CSV_DIR = Path(r"./nodes_and_relations") 

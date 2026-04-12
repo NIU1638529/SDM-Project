@@ -11,6 +11,10 @@ ALL_PAPER_IDS = []
 INPUT_PATH  = r"dblp_data"
 OUTPUT_PATH = r"nodes_and_relations"
 
+"""
+To show the process, we have added comments explaining what we do in each step.
+"""
+
 # Cities that will be assigned randomly
 CITIES = [
     "Amsterdam", "Athens", "Austin", "Barcelona", "Beijing", "Berlin", "Boston", "Brussels", 
