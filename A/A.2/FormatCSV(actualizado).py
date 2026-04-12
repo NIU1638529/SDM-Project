@@ -3,7 +3,7 @@ import csv
 import os
 import random
 
-# --- CONFIGURACIÓN ---
+# --- CONFIGURATION ---
 LIMIT = 5000 
 GLOBAL_AUTHORS = set()
 TITLES_SEEN = set()
@@ -11,7 +11,7 @@ ALL_PAPER_IDS = []
 INPUT_PATH  = r"dblp_data"
 OUTPUT_PATH = r"nodes_and_relations"
 
-# --- Cities---
+# Cities that will be assigned randomly
 CITIES = [
     "Amsterdam", "Athens", "Austin", "Barcelona", "Beijing", "Berlin", "Boston", "Brussels", 
     "Budapest", "Chicago", "Copenhagen", "Dublin", "Edinburgh", "Florence", "Geneva",
@@ -22,9 +22,9 @@ CITIES = [
     "Washington D.C.", "Zurich"
 ]
 
-# --- paper_id -> año de publicación (para calcular citas válidas por IF) ---
+# --- paper_id -> published year (to compute valid cites for IF) ---
 PAPER_YEAR = {}      # paper_id -> int(year)
-# --- MAPA paper_id -> journal (para agrupar por journal al generar citas) ---
+# ---  paper_id -> journal (to group by journal whem generating cites) ---
 PAPER_JOURNAL = {}   # paper_id -> journal_name
 
 # --- To count cites ---
@@ -38,46 +38,55 @@ TOPIC_KEYWORDS = {
     "data management": [
         "data management", "database management", "data administration", 
         "data curation", "transaction", "relational", "NoSQL", "data integration",
-        "data governance", "master data", "metadata"
+        "data governance", "master data", "metadata","communication", "vehicular", "edge computing", 
+        "fog computing", "intrusion detection",
+        "network intrusion", "interconnect", "NoC", "network-on-chip"
     ],
     "indexing": [
         "indexing", "index structures", "b-tree", "hash index", "inverted index", 
-        "bitmap index", "search structures", "query optimization", "multidimensional index"
+        "bitmap index", "search structures", "query optimization", "multidimensional index",
+        "processor", "microprocessor", "VLSI", "FPGA", "circuit", "chip", "hardware",
+        "network", "protocol", "routing", "wireless", "IoT", "internet of things",
+        "bandwidth", "latency", "packet", "TCP", "UDP", "5G", "antenna", "signal"
     ],
     "data modeling": [
         "data modeling", "data model", "entity-relationship", "ER model", "schema", 
-        "ontology", "conceptual modeling", "knowledge representation", "unified modeling language"
+        "ontology", "conceptual modeling", "knowledge representation", "unified modeling language",
+        "artificial intelligence", "AI", "intelligent system", "knowledge representation",
+        "expert system", "cognitive", "reasoning", "autonomous agent", "machine mentality",
+        "random forest", "gradient boosting", "XGBoost", "embedding", "fine-tuning",
+        "transfer learning", "federated learning", "spiking neural", "hyperdimensional"
     ],
     "big data": [
         "big data", "large-scale data", "massive datasets", "hadoop", "spark", 
-        "mapreduce", "data warehouse", "OLAP", "cloud computing", "data lake"
+        "mapreduce", "data warehouse", "OLAP", "cloud computing", "data lake",
+        "synthesis", "placement", "routing", "timing", "clock", "power dissipation",
+        "logic design", "gate", "flip-flop", "register", "pipeline", "cache"
     ],
     "data processing": [
         "data processing", "query processing", "transaction processing", 
-        "stream processing", "log", "parallel computing", "throughput", "batch processing"
-    ],
-    "data storage": [
-        "data storage", "storage", "persistent memory", "NVRAM", "flash", 
-        "distributed storage", "file systems", "memory hierarchy", "solid state drive"
-    ],
-    "data querying": [
-        "data querying", "query", "SQL", "SPARQL", "graph database", "query language", 
-        "complex queries", "query optimization", "XQuery", "cypher"
-    ],
-
-    # We add other categories
-    "Artificial Intelligence": [
-        "artificial intelligence", "AI", "intelligent system", "knowledge representation",
-        "expert system", "cognitive", "reasoning", "autonomous agent", "machine mentality",
+        "stream processing", "log", "parallel computing", "throughput", "batch processing",
         "singularity", "oracle AI", "brain emulation", "embodiment", "intentionality",
         "turing", "computation and cognition", "philosophy of AI", "AI safety"
     ],
+    "data storage": [
+        "data storage", "storage", "persistent memory", "NVRAM", "flash", 
+        "distributed storage", "file systems", "memory hierarchy", "solid state drive",
+        "memory hierarchy", "NoC", "network-on-chip", "SoC", "ASIC", "EDA",
+        "layout", "floorplan", "design automation", "DAC", "verification", "simulation"
+    ],
+    "data querying": [
+        "data querying", "query", "SQL", "SPARQL", "graph database", "query language", 
+        "complex queries", "query optimization", "XQuery", "cypher",
+        "fault", "test generation", "testability", "scan", "ATPG", "fault-tolerant",
+        "parasitic", "extraction", "interconnect", "wire", "buffer", "clock tree"
+    ],
+
+    # We add other categories
     "Machine Learning": [
         "machine learning", "deep learning", "neural network", "convolutional", "recurrent",
         "transformer", "attention mechanism", "generative model", "GAN", "autoencoder",
         "reinforcement learning", "supervised", "unsupervised", "classification", "regression",
-        "random forest", "gradient boosting", "XGBoost", "embedding", "fine-tuning",
-        "transfer learning", "federated learning", "spiking neural", "hyperdimensional"
     ],
     "Computer Vision": [
         "computer vision", "image recognition", "object detection", "image segmentation",
@@ -100,27 +109,12 @@ TOPIC_KEYWORDS = {
         "folksonomy", "ontology", "semantic enrichment", "interestingness measure",
         "proximity measure", "topological", "cognitive map", "user centered"
     ],
-    "Computer Architecture": [
-        "processor", "microprocessor", "VLSI", "FPGA", "circuit", "chip", "hardware",
-        "synthesis", "placement", "routing", "timing", "clock", "power dissipation",
-        "logic design", "gate", "flip-flop", "register", "pipeline", "cache",
-        "memory hierarchy", "NoC", "network-on-chip", "SoC", "ASIC", "EDA",
-        "layout", "floorplan", "design automation", "DAC", "verification", "simulation",
-        "fault", "test generation", "testability", "scan", "ATPG", "fault-tolerant",
-        "parasitic", "extraction", "interconnect", "wire", "buffer", "clock tree"
-    ],
     "Distributed Systems": [
         "distributed", "cloud computing", "parallel", "concurrency", "fault tolerance",
         "consensus", "replication", "MapReduce", "Hadoop", "Spark", "microservice",
         "container", "kubernetes", "serverless", "load balancing", "message passing",
         "multiprocessor", "multi-core", "GPU", "GPGPU", "accelerator", "HLS",
         "high-level synthesis", "CGRA", "dataflow", "streaming"
-    ],
-    "Networks and Communications": [
-        "network", "protocol", "routing", "wireless", "IoT", "internet of things",
-        "bandwidth", "latency", "packet", "TCP", "UDP", "5G", "antenna", "signal",
-        "communication", "vehicular", "edge computing", "fog computing", "intrusion detection",
-        "network intrusion", "interconnect", "NoC", "network-on-chip"
     ],
     "Security and Privacy": [
         "security", "privacy", "encryption", "cryptography", "authentication", "firewall",
