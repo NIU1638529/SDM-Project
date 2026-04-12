@@ -4,6 +4,7 @@
 
 - Python 3.10+
 - Neo4j running locally (default connection: `neo4j://127.0.0.1:7687`, user: `neo4j`, password: `sdmproject`)
+- All scripts are modularized to use a central configuration. You only need to configure Configuration.py in the root directory
 - Required Python packages:
   ```bash
   pip install neo4j pandas lxml
@@ -136,6 +137,35 @@ To print directly to the terminal instead, run without redirection:
 
 ```bash
 python B/B1.py
+```
+---
+
+## C — Recommender Queries
+
+Four independent scripts, each running one Cypher query against the live Neo4j database. **A.2 and A.3 must have been completed first.**
+
+All commands can be run from the project root or from inside `C/`.
+
+| Script | Description |
+|--------|-------------|
+| `C1.py` | Define "Database" community based on domain keywords |
+| `C2.py` | Identify related venues (conferences/journals with $>90\%$ community papers) |
+| `C3.py` | Find Top-100 most cited papers within the community |
+| `C4.py` | Identify and label potential reviewers and "Gurus" ($\ge 2$ top papers) |
+
+It is recommended to redirect the output to a file for easier inspection:
+
+```bash
+python C/C1.py > C/C1.out
+python C/C2.py > C/C2.out
+python C/C3.py > C/C3.out
+python C/C4.py > C/C4.out
+```
+
+To print directly to the terminal instead, run without redirection:
+
+```bash
+python C/C1.py
 ```
 
 ---
