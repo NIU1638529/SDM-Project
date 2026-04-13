@@ -30,7 +30,7 @@ NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
 QUERY = """
 MATCH (a:Author)-[:WRITES]->(p:Paper)
 WITH a, p.citation_count AS citations
-ORDER BY a.name, citations DESC
+ORDER BY citations DESC
 WITH a, collect(citations) AS citation_list
 WITH a, citation_list, size(citation_list) AS total
 WITH a, [i IN range(0, total - 1)

@@ -3,6 +3,11 @@
 Query C2 — Identifying Database Venues.
 Threshold: 90% of papers must have database keywords.
 """
+import os
+import sys
+import pandas as pd
+from neo4j import GraphDatabase
+
 main = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if main not in sys.path:
@@ -49,6 +54,7 @@ for r in results:
             "Venue Name": v["name"],
             "Total Papers": v["total"],
             "DB Papers": v["db_count"],
+            "Ratio": v["ratio"],
             "Affinity": f"{int(v['ratio']*100)}%"
         })
 
@@ -62,5 +68,8 @@ pd.set_option('display.expand_frame_repr', False)
 print("\n--- Stage 2: Database Community Venues (>= 90% Affinity) ---")
 if not df.empty:
     print(df.to_string(index=False, justify='left'))
+    top5 = df.sort_values("Ratio", ascending=False).head(5).drop(columns=["Ratio"])
+    print("\n--- Top 5 Venues by Affinity ---")
+    print(top5.to_string(index=False, justify='left'))
 else:
     print("No venues met the 90% threshold. Maybe the data is too diverse?")

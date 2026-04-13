@@ -22,14 +22,11 @@ if main not in sys.path:
 
 import Configuration
 
-# 3. Asignas las variables (fíjate que ahora usamos Configuration con C mayúscula)
+
 NEO4J_URI      = Configuration.NEO4J_URI
 NEO4J_USER     = Configuration.NEO4J_USER
 NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
 
-#NEO4J_URI      = "neo4j://127.0.0.1:7687"
-#NEO4J_USER     = "neo4j"
-#NEO4J_PASSWORD = "sdmproject"
 
 GRAPH_NAME = "author-coauthorship"
 

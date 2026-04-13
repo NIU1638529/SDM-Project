@@ -26,7 +26,7 @@ NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
 #NEO4J_PASSWORD = "sdmproject"
 
 QUERY = """
-MATCH (a:Author)-[:WRITES]->(p:Paper)-[:PUBLISHED_IN]->(e:Edition)-[:BELONGS_TO]->(c:Conference)
+MATCH (c:Conference)<-[:BELONGS_TO]-(e:Edition)<-[:PUBLISHED_IN]-(p:Paper)<-[:WRITES]-(a:Author)
 WITH c, a, count(DISTINCT e) AS editions_count
 WHERE editions_count >= 4
 RETURN c.name        AS conference,

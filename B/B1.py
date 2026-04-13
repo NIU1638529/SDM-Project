@@ -28,7 +28,7 @@ NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
 QUERY = """
 MATCH (c:Conference)<-[:BELONGS_TO]-(e:Edition)<-[:PUBLISHED_IN]-(p:Paper)
 WITH c, p, p.citation_count AS times_cited
-ORDER BY c.name, times_cited DESC
+ORDER BY times_cited DESC
 WITH c, collect({title: p.title, times_cited: times_cited})[0..3] AS top3
 RETURN c.name AS conference, c.type AS type, top3
 ORDER BY conference

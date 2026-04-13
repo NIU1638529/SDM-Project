@@ -29,21 +29,17 @@ NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
 #NEO4J_PASSWORD = "sdmproject"
 
 QUERY = """
-// Step 1: find the latest publication year per journal
-MATCH (p:Paper)-[:PUBLISHED_IN]->(v:Volume)-[:BELONGS_TO]->(j:Journal)
+// find the latest publication year per journal
+MATCH (j:Journal)<-[:BELONGS_TO]-(v:Volume)<-[:PUBLISHED_IN]-(p:Paper)
 WHERE p.year IS NOT NULL
 WITH j, max(p.year) AS ref_year
 
-// Step 2: collect papers published in the 2-year window (Y-1, Y-2)
-MATCH (p2:Paper)-[:PUBLISHED_IN]->(v2:Volume)-[:BELONGS_TO]->(j)
+// sum citation_count for papers published in the 2-year window (Y-1, Y-2)
+MATCH (j)<-[:BELONGS_TO]-(v2:Volume)<-[:PUBLISHED_IN]-(p2:Paper)
 WHERE p2.year IN [ref_year - 1, ref_year - 2]
-WITH j, ref_year, count(p2) AS papers_published, collect(p2) AS window_papers
-
-// Step 3: count all citations received by those papers.
-// Starting from the paper nodes (indexed) avoids a full CITES scan.
-UNWIND window_papers AS cited
-OPTIONAL MATCH (src)-[:CITES]->(cited)
-WITH j, ref_year, papers_published, count(src) AS citations_in_window
+WITH j, ref_year,
+     count(p2)                          AS papers_published,
+     sum(coalesce(p2.citation_count, 0)) AS citations_in_window
 
 RETURN j.name             AS journal,
        ref_year,

@@ -18,10 +18,10 @@ import csv
 import os
 import random
 
-RANDOM_SEED          = 42
+RANDOM_SEED           = 42
 REVIEWS_APPROVAL_PROB = 0.8   # P(is_approved = "Yes") — 80% Yes, 20% No
-INPUT_PATH           =  os.path.join("..", "Extraction", "nodes_and_relations")#os.path.join("..", "A.2", "nodes_and_relations")
-OUTPUT_PATH          = "update_data"
+INPUT_PATH            =  os.path.join("..", "A.2", "nodes_and_relations")
+OUTPUT_PATH           = "update_data"
 
 # Positive and negative comments to add as a review property
 POS_COMMENTS = [

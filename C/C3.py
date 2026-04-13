@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 C3.py — Identify the Top-100 papers of the Databases community.
 Calculates the ranking based on citations coming from the community itself.

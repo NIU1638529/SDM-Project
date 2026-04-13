@@ -2,6 +2,11 @@
 """
 Query C1 — Defining the Database Community.
 """
+import os
+import sys
+import pandas as pd
+from neo4j import GraphDatabase
+
 main = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if main not in sys.path:
@@ -12,10 +17,6 @@ import Configuration
 NEO4J_URI      = Configuration.NEO4J_URI
 NEO4J_USER     = Configuration.NEO4J_USER
 NEO4J_PASSWORD = Configuration.NEO4J_PASSWORD
-
-#NEO4J_URI      = "neo4j://127.0.0.1:7687"
-#NEO4J_USER     = "neo4j"
-#NEO4J_PASSWORD = "adal2003"
 
 QUERY = """
 MERGE (comm:Community {field: "Databases"})

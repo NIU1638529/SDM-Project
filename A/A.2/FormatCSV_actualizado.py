@@ -4,7 +4,7 @@ import os
 import random
 
 # --- CONFIGURATION ---
-LIMIT = 5000 
+LIMIT = 10000 
 GLOBAL_AUTHORS = set()
 TITLES_SEEN = set()
 ALL_PAPER_IDS = []
@@ -59,7 +59,10 @@ TOPIC_KEYWORDS = {
         "artificial intelligence", "AI", "intelligent system", "knowledge representation",
         "expert system", "cognitive", "reasoning", "autonomous agent", "machine mentality",
         "random forest", "gradient boosting", "XGBoost", "embedding", "fine-tuning",
-        "transfer learning", "federated learning", "spiking neural", "hyperdimensional"
+        "transfer learning", "federated learning", "spiking neural", "hyperdimensional",
+        "machine learning", "deep learning", "neural network", "convolutional", "recurrent",
+        "transformer", "attention mechanism", "generative model", "GAN", "autoencoder",
+        "reinforcement learning", "supervised", "unsupervised", "classification", "regression",
     ],
     "big data": [
         "big data", "large-scale data", "massive datasets", "hadoop", "spark", 
@@ -71,19 +74,34 @@ TOPIC_KEYWORDS = {
         "data processing", "query processing", "transaction processing", 
         "stream processing", "log", "parallel computing", "throughput", "batch processing",
         "singularity", "oracle AI", "brain emulation", "embodiment", "intentionality",
-        "turing", "computation and cognition", "philosophy of AI", "AI safety"
+        "turing", "computation and cognition", "philosophy of AI", "AI safety",
+        "data mining", "pattern recognition", "association rule", "clustering", "anomaly detection",
+        "outlier", "frequent itemset", "sequential pattern", "bayesian", "decision tree",
+        "feature selection", "dimensionality reduction", "knowledge discovery", "OLAP",
+        "folksonomy", "ontology", "semantic enrichment", "interestingness measure",
+        "proximity measure", "topological", "cognitive map", "user centered"
     ],
     "data storage": [
         "data storage", "storage", "persistent memory", "NVRAM", "flash", 
         "distributed storage", "file systems", "memory hierarchy", "solid state drive",
         "memory hierarchy", "NoC", "network-on-chip", "SoC", "ASIC", "EDA",
-        "layout", "floorplan", "design automation", "DAC", "verification", "simulation"
+        "layout", "floorplan", "design automation", "DAC", "verification", "simulation",
+        "distributed", "cloud computing", "parallel", "concurrency", "fault tolerance",
+        "consensus", "replication", "MapReduce", "Hadoop", "Spark", "microservice",
+        "container", "kubernetes", "serverless", "load balancing", "message passing",
+        "multiprocessor", "multi-core", "GPU", "GPGPU", "accelerator", "HLS",
+        "high-level synthesis", "CGRA", "dataflow", "streaming"
     ],
     "data querying": [
         "data querying", "query", "SQL", "SPARQL", "graph database", "query language", 
         "complex queries", "query optimization", "XQuery", "cypher",
         "fault", "test generation", "testability", "scan", "ATPG", "fault-tolerant",
-        "parasitic", "extraction", "interconnect", "wire", "buffer", "clock tree"
+        "parasitic", "extraction", "interconnect", "wire", "buffer", "clock tree",
+        "natural language", "NLP", "text mining", "sentiment analysis", "named entity",
+        "language model", "word embedding", "BERT", "GPT", "question answering",
+        "machine translation", "summarization", "information extraction", "parsing",
+        "speech recognition", "dialogue", "chatbot", "large language model", "LLM",
+        "assertion failure", "RTL design"
     ],
 
     # We add other categories
